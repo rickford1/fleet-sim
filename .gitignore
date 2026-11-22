@@ -1,0 +1,18 @@
+# ROS 2 colcon workspace
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Gazebo / Isaac Sim
+*.log
+*.bu
+*.pid
+
+# Editor
+.vscode/
+*.swp
