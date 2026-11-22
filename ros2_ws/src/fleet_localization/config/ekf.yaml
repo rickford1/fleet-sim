@@ -1,0 +1,44 @@
+ekf_filter_node:
+  ros__parameters:
+    use_sim_time: true
+    frequency: 30.0
+    two_d_mode: true
+    publish_tf: true
+    publish_acceleration: false
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    # world_frame = odom_frame: this EKF only fuses local sensors (wheel odom + IMU) into
+    # odom->base_link. AMCL (global, map-relative) handles map->odom separately.
+    world_frame: odom
+
+    # Sensor config arrays are [x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az].
+    #
+    # Wheel odom's own x/y/yaw is already just an integration of the velocities below it -
+    # fusing both the position AND the velocity it was derived from double-counts the same
+    # measurement and is what usually makes an EKF go unstable/oscillate. So: velocities only
+    # from wheel odom, let the EKF do its own integration.
+    odom0: wheel/odom
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  false, false,
+                   false, false, true,
+                   false, false, false]
+    odom0_differential: false
+    odom0_relative: false
+    odom0_queue_size: 10
+
+    # IMU: fuse absolute yaw (corrects the heading drift wheel odom accumulates over time)
+    # and yaw rate. Not fusing linear acceleration - doing that well needs bias estimation
+    # tuning that isn't worth the complexity for this robot yet.
+    imu0: imu
+    imu0_config: [false, false, false,
+                  false, false, true,
+                  false, false, false,
+                  false, false, true,
+                  false, false, false]
+    imu0_differential: false
+    imu0_relative: false
+    imu0_queue_size: 10
+    imu0_remove_gravitational_acceleration: true

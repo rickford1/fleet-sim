@@ -48,3 +48,37 @@ Click into this terminal (it needs keyboard focus) and use `i`/`,`/`j`/`l` etc. 
 source /opt/ros/humble/setup.bash
 ros2 topic echo /odom --field pose.pose.position
 ```
+
+## Running multiple robots
+
+`fleet_sim_gazebo/launch/multi_robot_sim.launch.py` spawns a configurable list of robots
+(edit the `ROBOTS` list at the top of that file to add/remove/reposition them), each under
+its own namespace (`/robot1/...`, `/robot2/...`) — separate `cmd_vel`, `odom`, `scan`, and `tf`
+per robot, so they don't interfere with each other.
+
+```
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+ros2 launch fleet_sim_gazebo multi_robot_sim.launch.py
+```
+
+Drive an individual robot by namespacing teleop's topic:
+```
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/robot1/cmd_vel
+```
+
+## Sensor fusion (IMU + wheel odom)
+
+Each robot has a simulated IMU in addition to the lidar. A `robot_localization` EKF
+(`fleet_localization` package) fuses the raw wheel odometry (`wheel/odom`, from the
+`diff_drive` Gazebo plugin) with the IMU to produce the robot's actual `/odom` topic and
+the `odom -> base_link` TF — AMCL and the rest of Nav2 consume that fused estimate, not
+raw wheel odom directly. This starts automatically as part of both `fleet_sim.launch.py`
+and `multi_robot_sim.launch.py`, nothing extra to run.
+
+To inspect it directly:
+```
+ros2 topic echo /wheel/odom --field twist.twist   # raw wheel odometry (EKF input)
+ros2 topic echo /imu --field angular_velocity      # raw IMU (EKF input)
+ros2 topic echo /odom --field pose.pose            # EKF-fused output (what Nav2 sees)
+```

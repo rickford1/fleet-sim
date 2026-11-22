@@ -12,6 +12,7 @@ def generate_launch_description():
     gazebo_pkg = get_package_share_directory('gazebo_ros')
     sim_pkg = get_package_share_directory('fleet_sim_gazebo')
     description_pkg = get_package_share_directory('fleet_robot_description')
+    localization_pkg = get_package_share_directory('fleet_localization')
 
     world_file = os.path.join(sim_pkg, 'worlds', 'fleet_world.world')
 
@@ -42,6 +43,13 @@ def generate_launch_description():
         output='screen',
     )
 
+    ekf = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(localization_pkg, 'launch', 'ekf.launch.py')
+        ),
+        launch_arguments={'use_sim_time': use_sim_time}.items(),
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -51,4 +59,5 @@ def generate_launch_description():
         gazebo,
         robot_state_publisher,
         spawn_robot,
+        ekf,
     ])

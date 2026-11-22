@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <robot name="fleet_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+  <!-- Set via `xacro fleet_robot.xacro robot_name:=robot1` for multi-robot spawning.
+       Empty (the default) means "no namespace" for single-robot use. -->
+  <xacro:arg name="robot_name" default=""/>
+  <xacro:property name="robot_name" value="$(arg robot_name)"/>
+
   <xacro:property name="chassis_length" value="0.40"/>
   <xacro:property name="chassis_width" value="0.30"/>
   <xacro:property name="chassis_height" value="0.15"/>
@@ -200,6 +205,7 @@
       </ray>
       <plugin name="lidar_plugin" filename="libgazebo_ros_ray_sensor.so">
         <ros>
+          <namespace>${robot_name}</namespace>
           <remapping>~/out:=scan</remapping>
         </ros>
         <output_type>sensor_msgs/LaserScan</output_type>
@@ -208,10 +214,48 @@
     </sensor>
   </gazebo>
 
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+    </inertial>
+  </link>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="chassis_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="imu_link">
+    <sensor type="imu" name="imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <imu>
+        <angular_velocity>
+          <x><noise type="gaussian"><mean>0.0</mean><stddev>2e-4</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0.0</mean><stddev>2e-4</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0.0</mean><stddev>2e-4</stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x><noise type="gaussian"><mean>0.0</mean><stddev>1.7e-2</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0.0</mean><stddev>1.7e-2</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0.0</mean><stddev>1.7e-2</stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+      <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <ros>
+          <namespace>${robot_name}</namespace>
+          <remapping>~/out:=imu</remapping>
+        </ros>
+      </plugin>
+    </sensor>
+  </gazebo>
+
   <gazebo>
     <plugin name="diff_drive_controller" filename="libgazebo_ros_diff_drive.so">
       <ros>
-        <namespace></namespace>
+        <namespace>${robot_name}</namespace>
       </ros>
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
@@ -221,9 +265,12 @@
       <max_wheel_acceleration>1.0</max_wheel_acceleration>
       <command_topic>cmd_vel</command_topic>
       <publish_odom>true</publish_odom>
-      <publish_odom_tf>true</publish_odom_tf>
+      <!-- EKF (robot_localization) owns the odom->base_link TF broadcast now, fusing
+           this raw wheel odometry with the IMU. Publishing it here too would mean two
+           nodes fighting over the same transform. -->
+      <publish_odom_tf>false</publish_odom_tf>
       <publish_wheel_tf>false</publish_wheel_tf>
-      <odometry_topic>odom</odometry_topic>
+      <odometry_topic>wheel/odom</odometry_topic>
       <odometry_frame>odom</odometry_frame>
       <robot_base_frame>base_link</robot_base_frame>
     </plugin>
