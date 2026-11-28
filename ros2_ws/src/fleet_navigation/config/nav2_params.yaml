@@ -1,3 +1,6 @@
+# "<robot_namespace>" is replaced at launch time by fleet_navigation's launch files:
+# "/robot1" in multi-robot mode, "" for a single un-namespaced robot. Costmap
+# topic names do not pick up the node namespace on their own in Humble.
 amcl:
   ros__parameters:
     use_sim_time: True
@@ -44,7 +47,7 @@ bt_navigator:
     use_sim_time: True
     global_frame: map
     robot_base_frame: base_link
-    odom_topic: /odom
+    odom_topic: <robot_namespace>/odom
     bt_loop_duration: 10
     default_server_timeout: 20
     wait_for_service_timeout: 1000
@@ -193,9 +196,9 @@ local_costmap:
         z_voxels: 16
         max_obstacle_height: 2.0
         mark_threshold: 0
-        observation_sources: scan
+        observation_sources: scan fleet
         scan:
-          topic: /scan
+          topic: <robot_namespace>/scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -203,6 +206,19 @@ local_costmap:
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
           obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+        fleet:
+          # Other robots' footprints from fleet_coordinator, in the map frame.
+          # Marking only; the lidar's raytracing clears a spot once that robot
+          # leaves it. Range is measured from the map origin for this source,
+          # so obstacle_max_range has to cover the whole map.
+          topic: <robot_namespace>/fleet_obstacles
+          data_type: "PointCloud2"
+          marking: True
+          clearing: False
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.0
+          obstacle_max_range: 50.0
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -224,16 +240,30 @@ global_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: scan
+        observation_sources: scan fleet
         scan:
-          topic: /scan
+          topic: <robot_namespace>/scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          # Long enough to clear a robot's old position anywhere in the 10 m room.
+          raytrace_max_range: 10.0
           raytrace_min_range: 0.0
           obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+        fleet:
+          # Other robots' footprints from fleet_coordinator, in the map frame.
+          # Marking only; the lidar's raytracing clears a spot once that robot
+          # leaves it. Range is measured from the map origin for this source,
+          # so obstacle_max_range has to cover the whole map.
+          topic: <robot_namespace>/fleet_obstacles
+          data_type: "PointCloud2"
+          marking: True
+          clearing: False
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.0
+          obstacle_max_range: 50.0
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"

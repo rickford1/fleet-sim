@@ -28,14 +28,7 @@
 
   <xacro:property name="lidar_radius" value="0.04"/>
   <xacro:property name="lidar_height" value="0.04"/>
-  <!-- Robots are all the same height and the lidar sits on top, so its scan plane
-       passes over every other robot's chassis. The detection band is a thin ring at
-       scan height that OTHER robots' lidars can see. Gazebo casts rays starting at
-       lidar_min_range, so a band smaller than that is invisible to this robot's own
-       lidar. Band radius ~= chassis half-diagonal (0.25 m). -->
-  <xacro:property name="lidar_min_range" value="0.25"/>
-  <xacro:property name="detection_band_radius" value="0.24"/>
-  <xacro:property name="detection_band_height" value="0.02"/>
+  <xacro:property name="lidar_min_range" value="0.15"/>  <!-- RPLidar A1 spec -->
 
   <material name="chassis_grey">
     <color rgba="0.3 0.3 0.3 1.0"/>
@@ -189,35 +182,6 @@
     <child link="lidar_link"/>
     <origin xyz="0 0 ${chassis_height/2.0 + lidar_height/2.0}" rpy="0 0 0"/>
   </joint>
-
-  <link name="detection_band_link">
-    <visual>
-      <geometry>
-        <cylinder radius="${detection_band_radius}" length="${detection_band_height}"/>
-      </geometry>
-      <material name="lidar_red"/>
-    </visual>
-    <collision>
-      <geometry>
-        <cylinder radius="${detection_band_radius}" length="${detection_band_height}"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="0.05"/>
-      <xacro:cylinder_inertia mass="0.05" r="${detection_band_radius}" h="${detection_band_height}"/>
-    </inertial>
-  </link>
-
-  <!-- Centered on the lidar so the band sits exactly in the scan plane. -->
-  <joint name="detection_band_joint" type="fixed">
-    <parent link="lidar_link"/>
-    <child link="detection_band_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
-
-  <gazebo reference="detection_band_link">
-    <material>Gazebo/Orange</material>
-  </gazebo>
 
   <gazebo reference="lidar_link">
     <material>Gazebo/Red</material>
