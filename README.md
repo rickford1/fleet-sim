@@ -51,21 +51,37 @@ ros2 topic echo /odom --field pose.pose.position
 
 ## Running multiple robots
 
-`fleet_sim_gazebo/launch/multi_robot_sim.launch.py` spawns a configurable list of robots
-(edit the `ROBOTS` list at the top of that file to add/remove/reposition them), each under
-its own namespace (`/robot1/...`, `/robot2/...`) — separate `cmd_vel`, `odom`, `scan`, and `tf`
-per robot, so they don't interfere with each other.
+`fleet_bringup/config/robots.yaml` is the single source of truth for the fleet roster —
+add, remove, or reposition a robot there and both the sim spawn and Nav2 bringup below
+pick it up automatically, no other files to touch. Each robot gets its own namespace
+(`/robot1/...`, `/robot2/...`) — separate `cmd_vel`, `odom`, `scan`, and `tf` per robot.
 
+**Terminal 1 — spawn the fleet:**
 ```
 source /opt/ros/humble/setup.bash
 source ros2_ws/install/setup.bash
 ros2 launch fleet_sim_gazebo multi_robot_sim.launch.py
 ```
 
+**Terminal 2 — Nav2 for every robot in the roster** (one full independent Nav2 stack per
+robot — map_server, AMCL, planner, controller, bt_navigator — all against the same shared
+map):
+```
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+ros2 launch fleet_navigation multi_robot_navigation.launch.py
+```
+
 Drive an individual robot by namespacing teleop's topic:
 ```
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/robot1/cmd_vel
 ```
+
+Set a Nav2 goal for one robot specifically in RViz: use the Displays panel to set the
+"2D Pose Estimate"/"2D Nav Goal" tools' topic to that robot's namespace (e.g.
+`/robot1/initialpose`, `/robot1/goal_pose`), or just open two RViz instances via
+`ros2 launch nav2_bringup rviz_launch.py namespace:=robot1 use_namespace:=True` (and
+again with `robot2`, etc.).
 
 ## Sensor fusion (IMU + wheel odom)
 

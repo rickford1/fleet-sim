@@ -5,6 +5,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterFile
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
@@ -13,6 +15,22 @@ def generate_launch_description():
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     namespace = LaunchConfiguration('namespace')
+
+    # A plain "ekf_filter_node: {ros__parameters: ...}" yaml only matches a node
+    # with that exact relative name - it does NOT match once the node is pushed
+    # into a namespace (e.g. /robot2/ekf_filter_node). RewrittenYaml nests the
+    # whole file under the namespace at launch time ({robot2: {ekf_filter_node:
+    # ...}}) so it matches correctly; when namespace is empty (single-robot) it
+    # leaves the file alone. Same trick nav2_bringup's own launch files use.
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=ekf_params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -32,7 +50,7 @@ def generate_launch_description():
             namespace=namespace,
             output='screen',
             parameters=[
-                ekf_params_file,
+                configured_params,
                 {'use_sim_time': use_sim_time},
             ],
             remappings=[

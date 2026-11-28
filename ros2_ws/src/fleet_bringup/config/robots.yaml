@@ -1,0 +1,11 @@
+# Single source of truth for which robots exist in the fleet and where they spawn.
+# fleet_sim_gazebo's multi_robot_sim.launch.py and fleet_navigation's
+# multi_robot_navigation.launch.py both read this file - add, remove, or
+# reposition a robot here and both pick it up automatically.
+robots:
+  - name: robot1
+    x: -1.5
+    y: 0.0
+  - name: robot2
+    x: 1.5
+    y: 0.0

@@ -256,6 +256,11 @@
     <plugin name="diff_drive_controller" filename="libgazebo_ros_diff_drive.so">
       <ros>
         <namespace>${robot_name}</namespace>
+        <!-- libgazebo_ros_diff_drive.so has no <odometry_topic> parameter (checked the
+             plugin binary directly - that tag doesn't exist and is silently ignored,
+             it always publishes on the hardcoded "odom" topic). The remapping below is
+             the only way to actually rename it. -->
+        <remapping>odom:=wheel/odom</remapping>
       </ros>
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
@@ -263,14 +268,12 @@
       <wheel_diameter>${wheel_radius * 2.0}</wheel_diameter>
       <max_wheel_torque>20</max_wheel_torque>
       <max_wheel_acceleration>1.0</max_wheel_acceleration>
-      <command_topic>cmd_vel</command_topic>
       <publish_odom>true</publish_odom>
       <!-- EKF (robot_localization) owns the odom->base_link TF broadcast now, fusing
            this raw wheel odometry with the IMU. Publishing it here too would mean two
            nodes fighting over the same transform. -->
       <publish_odom_tf>false</publish_odom_tf>
       <publish_wheel_tf>false</publish_wheel_tf>
-      <odometry_topic>wheel/odom</odometry_topic>
       <odometry_frame>odom</odometry_frame>
       <robot_base_frame>base_link</robot_base_frame>
     </plugin>

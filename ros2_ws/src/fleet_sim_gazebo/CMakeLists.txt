@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(gazebo_ros REQUIRED)
 find_package(fleet_robot_description REQUIRED)
 find_package(fleet_localization REQUIRED)
+find_package(fleet_bringup REQUIRED)
 
 install(DIRECTORY
   launch

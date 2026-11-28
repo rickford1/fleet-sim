@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(robot_localization REQUIRED)
+find_package(nav2_common REQUIRED)
 
 install(DIRECTORY
   launch
